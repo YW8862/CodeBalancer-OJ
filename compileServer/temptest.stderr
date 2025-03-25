@@ -1,0 +1,4 @@
+-o: error: ./temptest.exe: No such file or directory
+-o: error: ./temptest.cpp: No such file or directory
+-o: fatal error: no input files
+compilation terminated.
