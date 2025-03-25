@@ -1,4 +1,4 @@
-compileServer:coompileServer.cpp
+compileServer:compileServer.cpp
 	g++ -o $@ $^ -std=c++11
 
 .PHONY:clean

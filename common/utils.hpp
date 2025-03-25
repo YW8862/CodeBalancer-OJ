@@ -2,7 +2,7 @@
  * @Author: YW8862 2165628227@qq.com
  * @Date: 2025-03-24 14:31:39
  * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-24 22:25:09
+ * @LastEditTime: 2025-03-25 21:29:53
  * @FilePath: /yw/projects/onlineJudge/common/utils.hpp
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -35,14 +35,34 @@ namespace ns_utils
         /**
          * @param fileName:文件名
          */
+
+        //编译时需要的临时文件.cpp   .exe    .compilererr
         static std::string src(const std::string &fileName)
         {
             return addSuffix(fileName, ".cpp");
         }
+
         static std::string exe(const std::string &fileName)
         {
             return addSuffix(fileName, ".exe");
         }
+
+        static std::string compilererr(const std::string &fileName)
+        {
+            return addSuffix(fileName,".compilererr");
+        }
+
+        //运行时需要的临时文件.stdin   .sstdout  .stderr
+        static std::string stdin(const std::string &fileName)
+        {
+            return addSuffix(fileName, ".stdin");
+        }
+
+        static std::string stdout(const std::string &fileName)
+        {
+            return addSuffix(fileName, ".stdout");
+        }
+
         static std::string stderr(const std::string &fileName)
         {
             return addSuffix(fileName, ".stderr");
