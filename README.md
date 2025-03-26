@@ -5,9 +5,7 @@
 
 `utils`：工具模块，实现文件路径的拼接、判断文件状态
 
-
-    二、.compile： 编译模块
-   ``./compiler``实现编译功能
+    二、.compile： 编译模块``./compiler``实现编译功能
 
 创建子进程完成编译功能，并且将错误信息输出到.compilererr文件中
 
@@ -17,5 +15,12 @@
 
   `./runner`实现运行功能
 
+```bash
+./runner
+```
 
-    3.OJServer：oj模块
+`compiler&run`模块实现编译并运行模块
+
+    
+
+   3.OJServer：oj模块

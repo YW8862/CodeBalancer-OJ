@@ -2,17 +2,33 @@
  * @Author: YW8862 2165628227@qq.com
  * @Date: 2025-03-24 14:05:41
  * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-25 21:56:01
+ * @LastEditTime: 2025-03-26 22:01:27
  * @FilePath: /yw/projects/onlineJudge/compileServer/compileServer.cpp
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @Description: 提供编译并运行服务，需要确保文件唯一性
  */
-#include "compiler.hpp"
-#include "runner.hpp"
-using namespace ns_compile;
-using namespace ns_runner;
+
+#include "compilerRun.hpp"
+
+using namespace ns_compileAndRun;
+
 int main()
 {
-    Compiler::Compile("test");
-    Runner::run("test");
+    std::string inJson;
+
+    Json::Value inValue;
+    inValue["code"] = "#include<iostream>\nint main(){\nstd::cout<<\"hello world\"<<std::endl;\nreturn 0;\n}";
+    inValue["input"] = "";
+    inValue["cpuLimit"] = 1;
+    inValue["memLimit"] = 1024;
+
+    Json::Value outValue;
+
+
+    Json::FastWriter writer;
+    inJson = writer.write(inValue);
+    std::cout<<inJson<<std::endl;
+
+    std::string outJson;
+    compileAndRun::start(inJson,&outJson);
     return 0;
 }

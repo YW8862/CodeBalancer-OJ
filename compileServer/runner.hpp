@@ -25,8 +25,13 @@ namespace ns_runner
 
     public:
         
+    /**
+     * @brief :设置程序资源限制
+     * @param cpuLimit:限制CPU运行时间长度，单位s
+     * @param memLimit:限制程序虚拟内存大小，单位KB
+     */
         //提供设置进程占用资源大小的接口
-        static void SetProcLimit(int cpuLimit, int memLimit)
+        static void setProcLimit(int cpuLimit, int memLimit)
         {
             // 设置CPU时长
             struct rlimit cpuRlimit;
@@ -57,7 +62,7 @@ namespace ns_runner
          * @param cpuLimit:cpu限制时间,单位:s
          * @param memLimit:虚拟内存限制大仙，单位kB
          */
-        static int Run(const std::string &fileName, int cpuLimit, int memLimit)
+        static int run(const std::string &fileName, int cpuLimit, int memLimit)
         {
             /*********************************************
              * 程序运行：
@@ -69,10 +74,10 @@ namespace ns_runner
              * 标准输出: 程序运行完成，输出结果是什么
              * 标准错误: 运行时错误信息
              * *******************************************/
-            std::string execute = PathUtil::exe(fileName);
-            std::string _stdin   = PathUtil::stdin(fileName);
-            std::string _stdout  = PathUtil::stdout(fileName);
-            std::string _stderr  = PathUtil::stderr(fileName);
+            std::string execute = PathUtils::exe(fileName);
+            std::string _stdin   = PathUtils::stdin(fileName);
+            std::string _stdout  = PathUtils::stdout(fileName);
+            std::string _stderr  = PathUtils::stderr(fileName);
 
             umask(0);
             int stdinFD = open(_stdin.c_str(), O_CREAT|O_RDONLY, 0644);
@@ -80,7 +85,7 @@ namespace ns_runner
             int stderrFD = open(_stderr.c_str(), O_CREAT|O_WRONLY, 0644);
 
             if(stdinFD < 0 || stdoutFD < 0 || stderrFD < 0){
-                LOG(ERROR) << "运行时打开标准文件失败" << "\n";
+                LOG(ERROR,"打开流文件失败");
                 return -1; //代表打开文件失败
             }            
 
@@ -88,7 +93,7 @@ namespace ns_runner
             //子进程创建失败
             if (pid < 0)
             {
-                LOG(ERROR,“运行子进程创建失败”);
+                LOG(ERROR,"创建运行子进程失败");
                 close(stdinFD);
                 close(stdoutFD);
                 close(stderrFD);
@@ -100,9 +105,9 @@ namespace ns_runner
                 dup2(stdoutFD, 1);
                 dup2(stderrFD, 2);
 
-                SetProcLimit(cpuLimit, memLimit);
+                setProcLimit(cpuLimit, memLimit);
                 
-                execl(execute.c_str(), _execute.c_str(), nullptr);
+                execl(execute.c_str(), execute.c_str(), nullptr);
                 exit(1);
             }
             else
