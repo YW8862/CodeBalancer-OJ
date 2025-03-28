@@ -101,12 +101,14 @@ namespace ns_runner
             }
             else if (pid == 0)
             {
+                LOG(INFO,"创建运行子进程成功");
                 dup2(stdinFD, 0);
                 dup2(stdoutFD, 1);
                 dup2(stderrFD, 2);
 
                 setProcLimit(cpuLimit, memLimit);
                 
+                std::cout<<"1111111111111111"<<std::endl;
                 execl(execute.c_str(), execute.c_str(), nullptr);
                 exit(1);
             }

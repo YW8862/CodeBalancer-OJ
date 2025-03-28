@@ -150,7 +150,7 @@ namespace ns_utils
             while(std::getline(in,line))
             {
                 *outString += line;
-                *outString += (keep?"\n":"");
+                *outString += (keep?'\n':' ');
             }
             in.close();
             return true;

@@ -2,7 +2,7 @@
  * @Author: YW8862 2165628227@qq.com
  * @Date: 2025-03-24 14:05:18
  * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-26 21:52:36
+ * @LastEditTime: 2025-03-27 16:51:19
  * @FilePath: /yw/projects/onlineJudge/compileServer/compilerRun.hpp
  * @Description: 提供编译并运行服务，需要确保文件唯一性
  */
@@ -24,6 +24,37 @@ namespace ns_compileAndRun
     class compileAndRun
     {
     public:
+        /**
+         * @brief:清理临时文件
+         */
+        static void removeTempFile(const std::string &fileName)
+        {
+            // 清理文件
+            std::string _src = PathUtils::src(fileName);
+            if (FileUtil::isFileExists(_src))
+                unlink(_src.c_str());
+
+            std::string _compilerError = PathUtils::compilererr(fileName);
+            if (FileUtil::isFileExists(_compilerError))
+                unlink(_compilerError.c_str());
+
+            std::string _execute = PathUtils::exe(fileName);
+            if (FileUtil::isFileExists(_execute))
+                unlink(_execute.c_str());
+
+            std::string _stdin = PathUtils::stdin(fileName);
+            if (FileUtil::isFileExists(_stdin))
+                unlink(_stdin.c_str());
+
+            std::string _stdout = PathUtils::stdout(fileName);
+            if (FileUtil::isFileExists(_stdout))
+                unlink(_stdout.c_str());
+
+            std::string _stderr = PathUtils::stderr(fileName);
+            if (FileUtil::isFileExists(_stderr))
+                unlink(_stderr.c_str());
+        }
+
         /**
          * @brief :获取错误描述
          * @param statusCode:退出状态码
@@ -54,20 +85,10 @@ namespace ns_compileAndRun
                 break; // 6号信号
             case SIGXCPU:
                 desc = "运行超时";
-                break; // 23号信号
+                break; // 24号信号
             case SIGFPE:
-                desc = "浮点数一处";
+                desc = "浮点数溢出";
                 break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
-            // case : break;
             default:
                 desc = "未知错误 " + std::to_string(statusCode);
                 break;
@@ -97,80 +118,77 @@ namespace ns_compileAndRun
             Json::Value inputValue;
             Json::Value outputValue;
             Json::Reader reader;
+
             reader.parse(inputJson, inputValue); // 最后处理差错问题
 
-            std::string code = inputValue["code"].asString();            // 用户提交代码
-            std::string input = inputValue["input"].asString();          // 输入
-            int cpuLimit = inputValue["cpuLimit"].asInt(); // 运行时间限制
-            int memLimit = inputValue["memLimit"].asInt(); // 虚拟内存限制
+            std::string code = inputValue["code"].asString();   // 用户提交代码
+            std::string input = inputValue["input"].asString(); // 输入
+            int cpuLimit = inputValue["cpuLimit"].asInt();      // 运行时间限制
+            int memLimit = inputValue["memLimit"].asInt();      // 虚拟内存限制
 
+            int statusCode = 0;   // 编译运行状态码
+            std::string fileName; // 定义文件名
+            int result = 0;       // 运行结束状态码
             // 说明用户没有输入代码
             if (code.size() == 0)
             {
                 // 代码为空
-                outputValue["status"] = -1;
-                outputValue["reason"] = "用户提交代码为空";
-                // 结果序列化
-                return;
+                statusCode = -1;
+                goto End;
             }
 
             // 形成唯一的文件名，没有目录和后缀
             // 毫秒级时间戳+原子性递增的唯一值来保证唯一性
-            std::string fileName = FileUtil::UniqFileName(code);
+            fileName = FileUtil::UniqFileName(code);
 
             // 形成临时源文件,写入文件内容
             if (!FileUtil::writeFile(PathUtils::src(fileName), code))
             {
-                // 如果写入失败，
-                outputValue["status"] = -2;
-                outputValue["reason"] = "未知错误";
+                // 如果写入失败
+                statusCode = -2;
                 // 序列化结果
-                return;
+                goto End;
             }
 
             // 编译程序
             if (!Compiler::Compile(fileName))
             {
                 // 如果编译失败
-                outputValue["status"] = -3; // 代码编译发生错误
+                statusCode = -3;
                 std::string compileDesc;
-                if (!FileUtil::readFile(PathUtils::compilererr(fileName), &compileDesc,true))
+                if (!FileUtil::readFile(PathUtils::compilererr(fileName), &compileDesc, true))
                 {
                     // 打开错误文件失败
                     LOG(ERROR, "读取文件%s.stderr失败", fileName);
                 }
-                outputValue["reason"] = compileDesc; // 报错信息
-                // 序列化结果
-
-                return;
+                goto End;
             }
 
             // 运行程序
-            int statusCode = Runner::run(fileName, cpuLimit, memLimit);
-            if (statusCode < 0)
+            result = Runner::run(fileName, cpuLimit, memLimit);
+            if (result < 0)
             {
-                outputValue["status"] = -2;
-                outputValue["reason"] = "未知错误";
-                // 序列化
-
-                return;
+                statusCode = -2;
+                goto End;
             }
-            else if (statusCode > 0)
+            else if (result > 0)
             {
                 // 运行错误
-                outputValue["status"] = -4;                      // 标识运行报错
-                outputValue["reason"] = signoToDesc(statusCode); // 报错运行报错原因
-                // 序列化
-                
-                return;
+                statusCode = result;
+                goto End;
             }
             else
             {
-                outputValue["status"] = 0;
-                outputValue["reason"] = signoToDesc(statusCode);
+                statusCode = 0;
+            }
 
+        End:
+            outputValue["status"] = statusCode;
+            outputValue["reason"] = compileAndRun::signoToDesc(statusCode);
+            if (statusCode >= 0)
+            {
                 std::string stdoutFile;
-                if (!FileUtil::readFile(PathUtils::stdout(fileName), &stdoutFile,true))
+                if (!FileUtil::readFile(PathUtils::stdout(fileName), &stdoutFile, true))
                 {
                     // 打开错误文件失败
                     LOG(ERROR, "读取文件%s.stderr失败", fileName);
@@ -178,17 +196,17 @@ namespace ns_compileAndRun
                 outputValue["stdout"] = stdoutFile;
 
                 std::string stderrFile;
-                if (!FileUtil::readFile(PathUtils::stderr(fileName), &stderrFile,true))
+                if (!FileUtil::readFile(PathUtils::stderr(fileName), &stderrFile, true))
                 {
                     // 打开错误文件失败
                     LOG(ERROR, "打开文件%s.stderr失败", fileName);
                 }
                 outputValue["stderr"] = stderrFile;
-                // 运行成功
             }
-
             Json::StyledWriter writer;
             *outputJson = writer.write(outputValue);
+            std::cout << "------------------------------" << std::endl;
+            removeTempFile(fileName);
         };
     };
 };
