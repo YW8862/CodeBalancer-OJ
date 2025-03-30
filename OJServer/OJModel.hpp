@@ -80,7 +80,7 @@ namespace ns_model
                 FileUtil::readFile(questionNumPath + "header.cpp", &question.header, true);
                 FileUtil::readFile(questionNumPath + "tail.cpp", &question.tail, true);
                 questions.insert({question.number, question});
-                std::cout<<"11111111111"<<question.desc<<std::endl;
+                //std::cout<<"11111111111"<<question.desc<<std::endl;
                 LOG(INFO, "加载题目成功:%s",question.number.c_str());
             }
             

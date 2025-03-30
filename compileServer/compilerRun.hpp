@@ -161,6 +161,7 @@ namespace ns_compileAndRun
                     // 打开错误文件失败
                     LOG(ERROR, "读取文件%s.stderr失败", fileName);
                 }
+                outputValue["reason"] = compileDesc;
                 goto End;
             }
 
@@ -182,9 +183,15 @@ namespace ns_compileAndRun
                 statusCode = 0;
             }
 
-        End:
+        End:  
             outputValue["status"] = statusCode;
-            outputValue["reason"] = compileAndRun::signoToDesc(statusCode);
+            //表示编译错误
+            if(statusCode != -3)
+            {
+                outputValue["reason"] = compileAndRun::signoToDesc(statusCode);
+            }
+            
+            //如果大于0，表示运行错误
             if (statusCode >= 0)
             {
                 std::string stdoutFile;

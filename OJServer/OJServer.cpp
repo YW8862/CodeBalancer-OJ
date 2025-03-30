@@ -44,11 +44,14 @@ int main()
         response.set_content(html,"text/html;charset=utf-8"); });
 
     // 用户提交代码使用判题功能 -->每题的测试用例   编译并运行
-    svr.Get(R"(/judge/(\d+))", [&control](const Request &request, Response &response)
+    svr.Post(R"(/judge/(\d+))", [&control](const Request &request, Response &response)
             {
         //获取题目编号
         std::string number = request.matches[1];
-        response.set_content("编译运行题目："+number,"text/plain;charset=utf-8"); });
+        std::string resultJson;
+        control.judge(number,request.body,&resultJson);
+
+        response.set_content(resultJson,"application/json;charset=utf-8"); });
 
     svr.listen("0.0.0.0", 8888);
     return 0;

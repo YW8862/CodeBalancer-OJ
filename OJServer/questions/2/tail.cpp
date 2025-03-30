@@ -1,12 +1,4 @@
-/*
- * @Author: YW8862 2165628227@qq.com
- * @Date: 2025-03-29 10:20:59
- * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-29 10:22:12
- * @FilePath: /yw/projects/CodeBalancer-OJ/OJServer/questioons/2/tail.cpp
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-#ifndef COMPILER_ONLINE
+#ifndef COMPILEONLINE
 #include "header.cpp"
 #endif
 

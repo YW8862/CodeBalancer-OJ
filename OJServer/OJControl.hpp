@@ -7,7 +7,6 @@
 #include <string>
 #include <mutex>
 #include <cassert>
-#include "./common/httplib.h"
 #include "jsoncpp/json/json.h"
 #include "OJView.hpp"
 #include "OJModel.hpp"
@@ -59,9 +58,9 @@ namespace ns_control
         }
 
         // 减小负载
-        void decLod()
+        void decLoad()
         {
-            if (mex != nullptr)
+            if (mtx != nullptr)
             {
                 mtx->lock();
                 load--;
@@ -84,7 +83,7 @@ namespace ns_control
     class LoadBalance
     {
     public:
-        LoadBalance()
+        LoadBalance():mtx(new std::mutex())
         {
             assert(loadConf(serviceMachine));
             LOG(INFO, "加载主机信息成功");
@@ -138,7 +137,7 @@ namespace ns_control
             int onlineSize = online.size();
             if (onlineSize == 0)
             {
-                LOG(Fatal, "所有后端编译主机已全部离线");
+                LOG(FATAL, "所有后端编译主机已全部离线");
                 mtx->unlock();
                 return false;
             }
@@ -149,12 +148,12 @@ namespace ns_control
             *m = &machines[online[0]];
             for (int i = 0; i < onlineSize; i++)
             {
-                uint64 curLoad = machines[online[i]].getLoad();
+                uint64_t curLoad = machines[online[i]].getLoad();
                 if (minLoad > curLoad)
                 {
                     *id = online[i];
                     minLoad = curLoad;
-                    *machine = &machines[online[i]]
+                    *m = &machines[online[i]];
                 }
             }
             // 2.需要离线或上线该主机
@@ -168,14 +167,15 @@ namespace ns_control
         // 主机下线
         void offlineMachine(int id)
         {
-            mtx->lobk();
-            for (auto iter = online.online.begin(); iter != online.end(); iter++)
+            mtx->lock();
+            for (auto iter = online.begin(); iter != online.end(); iter++)
             {
-                if (iter == id)
+                if (*iter == id)
                 {
                     // 需要下线的主机已经找到
-                    online.erase(iter);
                     offline.push_back(*iter);
+                    online.erase(iter);
+
                     break;
                 }
             }
@@ -186,7 +186,7 @@ namespace ns_control
         void onlineMachine()
         {
             //当所有的主机离线，统一上线
-            
+
         }
 
         // 测试函数
@@ -225,7 +225,7 @@ namespace ns_control
     class Control
     {
     private:
-        Model _model;
+        Model model;
         View view;
         LoadBalance loadBalance;
 
@@ -237,7 +237,7 @@ namespace ns_control
         bool allQuestions(std::string *html)
         {
             std::vector<Question> allQuestion;
-            if (_model.getAllQuestions(&allQuestion))
+            if (model.getAllQuestions(&allQuestion))
             {
                 // 获取题目信息成功，将所有的题目数据构建成网页返回
                 view.allExpandHtml(allQuestion, html);
@@ -259,7 +259,7 @@ namespace ns_control
         bool oneQuestion(const std::string &number, std::string *html)
         {
             Question question;
-            if (_model.getOneQuestion(number, &question))
+            if (model.getOneQuestion(number, &question))
             {
                 // 获取指定编号题目成功，构建网页并且返回
                 view.oneExpandHtml(question, html);
@@ -284,21 +284,21 @@ namespace ns_control
             Question question;
             model.getOneQuestion(number, &question);
             // 1.反序列化，得到提交的源码和input
-            Json::Read reader;
+            Json::Reader reader;
             Json::Value inValue;
             reader.parse(inJson, inValue);
 
             std::string code = inValue["code"].asString();
 
             // 2.重新拼接用户代码和测试用例代码，形成新的代码
-            Json::value compileValue;
+            Json::Value compileValue;
             compileValue["input"] = inValue["input"].asString();
             compileValue["code"] = code + question.tail;
-            compileValue["cpuLimit"] = q.cpuLimit;
-            compileValue["memLimit"] = q.memLimit;
+            compileValue["cpuLimit"] = question.cpuLimit;
+            compileValue["memLimit"] = question.memLimit;
             Json::FastWriter writer;
             std::string compileString = writer.write(compileValue);
-
+            std::cout<<compileString <<std::endl;
             // 3.选择负载最低的主机
             // 一直选择，直到主机可用
             while (true)

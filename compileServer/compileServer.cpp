@@ -1,11 +1,3 @@
-/*
- * @Author: YW8862 2165628227@qq.com
- * @Date: 2025-03-24 14:05:41
- * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-28 09:10:17
- * @FilePath: /yw/projects/onlineJudge/compileServer/compileServer.cpp
- * @Description: 提供编译并运行服务，需要确保文件唯一性
- */
 
 #include "compilerRun.hpp"
 #include "../common/httplib.h"

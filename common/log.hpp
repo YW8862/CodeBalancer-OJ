@@ -9,7 +9,7 @@
 #include <cstdarg>
 #include <fstream>
 
-bool isSave = true;
+bool isSave = false;
 const std::string logName = "log.txt";
 
 enum Level

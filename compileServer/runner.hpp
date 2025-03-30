@@ -24,13 +24,12 @@ namespace ns_runner
         ~Runner() {}
 
     public:
-        
-    /**
-     * @brief :设置程序资源限制
-     * @param cpuLimit:限制CPU运行时间长度，单位s
-     * @param memLimit:限制程序虚拟内存大小，单位KB
-     */
-        //提供设置进程占用资源大小的接口
+        /**
+         * @brief :设置程序资源限制
+         * @param cpuLimit:限制CPU运行时间长度，单位s
+         * @param memLimit:限制程序虚拟内存大小，单位KB
+         */
+        // 提供设置进程占用资源大小的接口
         static void setProcLimit(int cpuLimit, int memLimit)
         {
             // 设置CPU时长
@@ -42,17 +41,16 @@ namespace ns_runner
             // 设置内存大小
             struct rlimit memRlimit;
             memRlimit.rlim_max = RLIM_INFINITY;
-            memRlimit.rlim_cur = memLimit * 1024; //转化成为KB
+            memRlimit.rlim_cur = memLimit * 1024; // 转化成为KB
             setrlimit(RLIMIT_AS, &memRlimit);
         }
-
 
         // 指明文件名即可，不需要代理路径，不需要带后缀
         /*******************************************
          * 返回值 > 0: 程序异常了，退出时收到了信号，返回值就是对应的信号编号
          * 返回值 == 0: 正常运行完毕的，结果保存到了对应的临时文件中
          * 返回值 < 0: 内部错误
-         * 
+         *
          * cpu_limit: 该程序运行的时候，可以使用的最大cpu资源上限
          * mem_limit: 改程序运行的时候，可以使用的最大的内存大小(KB)
          * *****************************************/
@@ -75,40 +73,41 @@ namespace ns_runner
              * 标准错误: 运行时错误信息
              * *******************************************/
             std::string execute = PathUtils::exe(fileName);
-            std::string _stdin   = PathUtils::stdin(fileName);
-            std::string _stdout  = PathUtils::stdout(fileName);
-            std::string _stderr  = PathUtils::stderr(fileName);
+            std::string _stdin = PathUtils::stdin(fileName);
+            std::string _stdout = PathUtils::stdout(fileName);
+            std::string _stderr = PathUtils::stderr(fileName);
 
             umask(0);
-            int stdinFD = open(_stdin.c_str(), O_CREAT|O_RDONLY, 0644);
-            int stdoutFD = open(_stdout.c_str(), O_CREAT|O_WRONLY, 0644);
-            int stderrFD = open(_stderr.c_str(), O_CREAT|O_WRONLY, 0644);
+            int stdinFD = open(_stdin.c_str(), O_CREAT | O_RDONLY, 0644);
+            int stdoutFD = open(_stdout.c_str(), O_CREAT | O_WRONLY, 0644);
+            int stderrFD = open(_stderr.c_str(), O_CREAT | O_WRONLY, 0644);
 
-            if(stdinFD < 0 || stdoutFD < 0 || stderrFD < 0){
-                LOG(ERROR,"打开流文件失败");
-                return -1; //代表打开文件失败
-            }            
+            if (stdinFD < 0 || stdoutFD < 0 || stderrFD < 0)
+            {
+                LOG(ERROR, "打开流文件失败");
+                return -1; // 代表打开文件失败
+            }
 
             pid_t pid = fork();
-            //子进程创建失败
+            // 子进程创建失败
             if (pid < 0)
             {
-                LOG(ERROR,"创建运行子进程失败");
+                LOG(ERROR, "创建运行子进程失败");
                 close(stdinFD);
                 close(stdoutFD);
                 close(stderrFD);
-                return -2; 
+                return -2;
             }
             else if (pid == 0)
             {
-                LOG(INFO,"创建运行子进程成功");
+                LOG(INFO, "创建运行子进程成功");
                 dup2(stdinFD, 0);
                 dup2(stdoutFD, 1);
                 dup2(stderrFD, 2);
 
                 setProcLimit(cpuLimit, memLimit);
-                
-                std::cout<<"1111111111111111"<<std::endl;
+
+                std::cout << "1111111111111111" << std::endl;
                 execl(execute.c_str(), execute.c_str(), nullptr);
                 exit(1);
             }
@@ -118,11 +117,11 @@ namespace ns_runner
                 close(stdoutFD);
                 close(stderrFD);
 
-                //保存子进程退出信息
-                int status = 0;
+                // 保存子进程退出信息
+                int status = -99;
                 waitpid(pid, &status, 0);
-                
-                LOG(INFO,"运行完毕, info:%d",status & 0x7F); 
+
+                LOG(INFO, "运行完毕, info:%d", status & 0x7F);
                 return status & 0x7F;
             }
         }

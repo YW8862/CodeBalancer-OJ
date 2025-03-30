@@ -30,10 +30,6 @@ namespace ns_compile
         Compiler() {}
         ~Compiler() {}
 
-        /**
-         * 
-         */
-
         // 实现编译功能
         /**
          * @param fileName:生成的临时源代码文件
@@ -64,10 +60,11 @@ namespace ns_compile
                 // 重定向到标准错误
                 dup2(stderrfd, 2);
 
-                //添加资源约束，防止恶意程序破环操作系统
+                // 添加资源约束，防止恶意程序破环操作系统
 
                 // 程序替换，并不会影响文件描述符，最后必须使用nullptr结尾
-                execlp("g++", "g++", "-o", PathUtils::exe(fileName).c_str(), PathUtils::src(fileName).c_str(), "-std=c++11", nullptr);
+                execlp("g++", "g++", "-o", PathUtils::exe(fileName).c_str(), PathUtils::src(fileName).c_str(),
+                        "-static", "-D", "COMPILEONLINE", "-std=c++11", nullptr);
                 exit(1);
             }
             else
@@ -79,7 +76,7 @@ namespace ns_compile
                     LOG(INFO, "文件: %s 编译成功", PathUtils::src(fileName).c_str());
                     return true;
                 }
-                LOG(ERROR, "编译失败，未形成可执行程序")
+                LOG(ERROR, "编译失败，未形成可执行程序");
             }
             return false;
         }
