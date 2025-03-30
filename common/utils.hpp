@@ -1,22 +1,17 @@
-/*
- * @Author: YW8862 2165628227@qq.com
- * @Date: 2025-03-24 14:31:39
- * @LastEditors: YW8862 2165628227@qq.com
- * @LastEditTime: 2025-03-26 21:48:27
- * @FilePath: /yw/projects/onlineJudge/common/utils.hpp
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
+
 #pragma once
 
 #include <iostream>
 #include <fstream>
 #include <atomic>
 #include <string>
+#include <vector>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <fcntl.h>
+#include <boost/algorithm/string.hpp>
 
 namespace ns_utils
 {
@@ -155,5 +150,20 @@ namespace ns_utils
             in.close();
             return true;
         }
+    };
+
+    class StringUtils
+    {
+        public:
+        /**
+         * @brief 用于按照某个字符串切割字符串的工具
+         * @param str :传入需要切分的字符串
+         * @param target :传出拆分后的字符串集合
+         * @param sep :拆分标识符
+         */
+        static void splitString(const std::string &str,std::vector<std::string> *target,const std::string &sep)
+        {
+            boost::split(*target,str,boost::is_any_of(sep),boost::algorithm::token_compress_on);
+        }   
     };
 };

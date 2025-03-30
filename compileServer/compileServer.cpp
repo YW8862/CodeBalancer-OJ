@@ -44,26 +44,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-// int main()
-// {
-//     LOGTOSCREEN();
-//     std::string inJson;
-//     Json::Value inValue;
-//     inValue["code"] = "#include<iostream>\nint main(){\nstd::cout<<\"hello world\"<<std::endl;int a = 1;a/=0;\nreturn 0;\n}";
-//     inValue["input"] = "";
-//     inValue["cpuLimit"] = 5;
-//     inValue["memLimit"] = 1024*10;
-
-//     Json::Value outValue;
-
-//     Json::FastWriter writer;
-//     inJson = writer.write(inValue);
-//     std::cout<<inJson<<std::endl;
-
-//     std::string outJson;
-//     compileAndRun::start(inJson,&outJson);
-//     std::cout<<outJson<<std::endl;
-//     //compileAndRun::removeTempFile();
-//     return 0;
-// }
