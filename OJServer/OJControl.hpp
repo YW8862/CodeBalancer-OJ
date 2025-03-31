@@ -7,6 +7,7 @@
 #include <string>
 #include <mutex>
 #include <cassert>
+#include <algorithrm>
 #include "jsoncpp/json/json.h"
 #include "OJView.hpp"
 #include "OJModel.hpp"
@@ -239,6 +240,9 @@ namespace ns_control
             std::vector<Question> allQuestion;
             if (model.getAllQuestions(&allQuestion))
             {
+                sort(allQuestion.begin(),allQuestion.end(),[](Question &q1,QUestion &q2){
+                    return atoi(q1.number) < atoi(q2.number);
+                });
                 // 获取题目信息成功，将所有的题目数据构建成网页返回
                 view.allExpandHtml(allQuestion, html);
             }

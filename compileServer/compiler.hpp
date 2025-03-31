@@ -63,8 +63,8 @@ namespace ns_compile
                 // 添加资源约束，防止恶意程序破环操作系统
 
                 // 程序替换，并不会影响文件描述符，最后必须使用nullptr结尾
-                execlp("g++", "g++", "-o", PathUtils::exe(fileName).c_str(), PathUtils::src(fileName).c_str(),
-                        "-static", "-D", "COMPILEONLINE", "-std=c++11", nullptr);
+                execlp("g++", "g++", "-o", PathUtils::exe(fileName).c_str(), PathUtils::src(fileName).c_str(), 
+                "-Werror=return-type", "-static", "-D", "COMPILEONLINE", "-std=c++11", nullptr);
                 exit(1);
             }
             else
