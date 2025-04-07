@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <unordered_map>
+#include "include/mysql.h"
 #include "../common/log.hpp"
 #include "../common/utils.hpp"
 
@@ -32,16 +33,56 @@ namespace ns_model
     class Model
     {
     private:
+        const std::string host = "127.0.0.1";
+        const std::string user = "OJClient";
+        const std::string password = "123456";
+        const std::string database = "oj";
+        const int port = 3306;
         const std::string tableName = "oj_questions"; 
     public:
         Model()
         {
-            assert(loadQuestionsList(questionsList));
+            
         }
 
-        bool queryMysql(const std::string &sql,vector<Question> *result)
+        bool queryMysql(const std::string &sql,std::vector<Question> *result)
         {
+            //创建mysql句柄
+            MYSQL *mysql = mysql_init(nullptr);
+            if(nullptr == mysql_real_connect(mysql,host.c_str(),user.c_str(),password.c_str(),database.c_str(),port,nullptr,0))
+            {
+                LOG(FATAL,"数据库连接失败!");
+                return false;
+            }
+            LOG(INFO,"链接数据库成功");
+            //执行sql语句
+            if(0 != mysql_query(mysql,sql.c_str()))
+            {
+                LOG(WARNING,"执行sql:%s失败",sql.c_str());
+            }
+            //提取结果
+            MYSQL_RES *res = mysql_store_result(mysql);
 
+            //分析结果
+            int rows = mysql_num_rows(res);
+            int cols = mysql_num_fields(res);
+
+            for(int i = 0;i<rows;i++)
+            {
+                MYSQL_ROW row = mysql_fetch_row(res);
+                Question question;
+                question.number = row[0];
+                question.title = row[1];
+                question.difficulity = row[2];
+                question.desc = row[3];
+                question.header = row[4];
+                question.tail = row[5];
+                question.cpuLimit = atoi(row[6]);
+                question.memLimit = atoi(row[7]);
+                result->emplace_back(std::move(question));
+            }
+            //关闭链接
+            mysql_close(mysql);
         }
 
         /**
@@ -50,7 +91,9 @@ namespace ns_model
          */
         bool getAllQuestions(std::vector<Question> *questionsList)
         {
-            
+            const std::string sql = "select * from ";
+            sql += tableName;
+            return queryMysql(sql,questionsList);
         }
 
         /**
@@ -60,7 +103,19 @@ namespace ns_model
          */
         bool getOneQuestion(const std::string &number, Question *question)
         {
-
+            const std::string sql = "select * from ";
+            sql += tableName;
+            sql = sql + "where number = " + number;
+            std::vector<Question> questions;
+            queryMysql(sql,&questions);
+            
+            //如果查询失败，直接返回false
+            if(questions.empty())
+            {
+                return false;
+            }
+            *question = questions[0];
+            return true;
         }
 
         ~Model() {}
