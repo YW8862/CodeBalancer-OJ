@@ -7,6 +7,7 @@
  * @Description: 为外界提供OJ服务
  */
 #include <iostream>
+#include <signal.h>
 #include "OJControl.hpp"
 
 #include "jsoncpp/json/json.h"
@@ -17,11 +18,21 @@
 
 using namespace httplib;
 using namespace ns_control;
+
+static Control *ctlptr = nullptr;
+
+void recovery(int signal)
+{
+    ctlptr->recoveryMachine();
+}
+
 int main()
 {
+    signal(SIGQUIT,recovery);
     // 用户请求路由
     Server svr;
     Control control;
+    ctlptr = &control;
     View view;
     svr.set_base_dir("./wwwroot");
 
@@ -32,7 +43,7 @@ int main()
         std::string html;
         control.allQuestions(&html);
         response.set_content(html, "text/html;charset=utf-8"); });
-
+        
     // 根据题目编号获得题目内容
     // 如question100
     svr.Get(R"(/question/(\d+))", [&control](const Request &request, Response &response)

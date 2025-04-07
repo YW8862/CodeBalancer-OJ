@@ -7,7 +7,7 @@
 #include <string>
 #include <mutex>
 #include <cassert>
-#include <algorithrm>
+#include <algorithm>
 #include "jsoncpp/json/json.h"
 #include "OJView.hpp"
 #include "OJModel.hpp"
@@ -69,6 +69,13 @@ namespace ns_control
             }
         }
 
+        void resetLoad()
+        {
+            mtx->lock();
+            load = 0;
+            mtx->unlock();
+        }
+
         // 获取主机负载
         uint64_t getLoad()
         {
@@ -84,7 +91,7 @@ namespace ns_control
     class LoadBalance
     {
     public:
-        LoadBalance():mtx(new std::mutex())
+        LoadBalance() : mtx(new std::mutex())
         {
             assert(loadConf(serviceMachine));
             LOG(INFO, "加载主机信息成功");
@@ -168,11 +175,12 @@ namespace ns_control
         // 主机下线
         void offlineMachine(int id)
         {
-            mtx->lock();
             for (auto iter = online.begin(); iter != online.end(); iter++)
             {
                 if (*iter == id)
                 {
+                    //先禁止后续请求到来
+                    machines[id].resetLoad();
                     // 需要下线的主机已经找到
                     offline.push_back(*iter);
                     online.erase(iter);
@@ -186,8 +194,11 @@ namespace ns_control
         // 主机上线
         void onlineMachine()
         {
-            //当所有的主机离线，统一上线
-
+            // 当所有的主机离线，统一上线
+            mtx->lock();
+            online.insert(online.end(),offline.begin(), offline.end());
+            offline.clear();
+            mtx->unlock();
         }
 
         // 测试函数
@@ -197,9 +208,9 @@ namespace ns_control
             std::cout << "在线主机：";
             for (int i = 0; i < online.size(); i++)
             {
-                std::cout<<online[i]<<" ";
+                std::cout << online[i] << " ";
             }
-            std::cout<<std::endl;
+            std::cout << std::endl;
             mtx->unlock();
         }
 
@@ -209,9 +220,9 @@ namespace ns_control
             std::cout << "离线主机：";
             for (int i = 0; i < online.size(); i++)
             {
-                std::cout<<offline[i]<<" ";
+                std::cout << offline[i] << " ";
             }
-            std::cout<<std::endl;
+            std::cout << std::endl;
             mtx->unlock();
         }
 
@@ -231,6 +242,15 @@ namespace ns_control
         LoadBalance loadBalance;
 
     public:
+
+        /**
+         * @brief :恢复所有主机
+         */
+        void recoveryMachine()
+        {
+            loadBalance.onlineMachine();
+        }
+
         /**
          * @brief :根据题目数据构建html网页
          * @param html:输出型参数，构建好的html文档源码
@@ -240,9 +260,8 @@ namespace ns_control
             std::vector<Question> allQuestion;
             if (model.getAllQuestions(&allQuestion))
             {
-                sort(allQuestion.begin(),allQuestion.end(),[](Question &q1,QUestion &q2){
-                    return atoi(q1.number) < atoi(q2.number);
-                });
+                sort(allQuestion.begin(), allQuestion.end(), [](const Question &q1, const Question &q2)
+                     { return atoi(q1.number.c_str()) < atoi(q2.number.c_str()); });
                 // 获取题目信息成功，将所有的题目数据构建成网页返回
                 view.allExpandHtml(allQuestion, html);
             }
@@ -302,7 +321,7 @@ namespace ns_control
             compileValue["memLimit"] = question.memLimit;
             Json::FastWriter writer;
             std::string compileString = writer.write(compileValue);
-            std::cout<<compileString <<std::endl;
+            // std::cout<<compileString <<std::endl;
             // 3.选择负载最低的主机
             // 一直选择，直到主机可用
             while (true)
@@ -313,7 +332,6 @@ namespace ns_control
                 {
                     break;
                 }
-                LOG(INFO, "选择主机成功: %d --> %s:%d", id, m->ip.c_str(), m->port);
 
                 // 4.发起http请求，获取运行结果
                 Client client(m->ip, m->port);
@@ -322,6 +340,8 @@ namespace ns_control
                 m->incLoad();
                 if (auto res = client.Post("/compileAndRun", compileString, "application/json;charset=utf-8"))
                 {
+                    LOG(INFO, "选择主机成功: %d --> %s:%d", id, m->ip.c_str(), m->port);
+                    LOG(INFO, "当前主机负载是 %d ", m->getLoad());
                     // 5.将运行结果输出到outJson
                     // 只有响应状态码为200，才算陈成功
                     if (res->status == 200)
@@ -338,9 +358,9 @@ namespace ns_control
                     // 请求失败，可能该主机已经离线
                     LOG(ERROR, "当前主机已经离线,id：%d 详情：%s:%d", id, m->ip.c_str(), m->ip);
                     loadBalance.offlineMachine(id);
-                    loadBalance.printOnline();
-                    loadBalance.printOffline();
                 }
+                loadBalance.printOnline();
+                loadBalance.printOffline();
             }
         }
     };
